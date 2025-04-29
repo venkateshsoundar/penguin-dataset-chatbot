@@ -1,73 +1,57 @@
 import streamlit as st
+import pandas as pd
 from openai import OpenAI
 
-# -----------------------------
-# STREAMLIT CONFIGURATION
-# -----------------------------
-st.set_page_config(page_title="VK Chatbot", layout="wide")
-st.title("🤖 VK Chatbot - Powered by DeepSeek-R1")
+# --- Load dataset ---
+df = pd.read_csv("https://raw.githubusercontent.com/dataprofessor/data/master/penguins_cleaned.csv")
 
-# -----------------------------
-# LOAD API KEY SECURELY
-# -----------------------------
+# --- Setup OpenRouter / DeepSeek ---
 api_key = st.secrets["DEEPSEEK_API_KEY"]
-st.text(f"✅ Loaded key: {api_key[:6]}**********")  # Only print prefix
-
-# -----------------------------
-# SETUP OPENROUTER CLIENT
-# -----------------------------
 client = OpenAI(
     base_url="https://openrouter.ai/api/v1",
     api_key=api_key,
 )
 
-st.title("🔐 Key Check")
-try:
-    resp = client.models.list()
-    st.success("✅ Connection to OpenRouter succeeded!")
-except Exception as e:
-    st.error(f"❌ Error during auth test: {e}")
+# --- Streamlit UI ---
+st.set_page_config(page_title="Penguin QA Chatbot")
+st.title("🐧 Penguin Dataset Chatbot")
 
-# -----------------------------
-# SESSION STATE FOR CHAT
-# -----------------------------
-if "messages" not in st.session_state:
-    st.session_state.messages = []
+if "history" not in st.session_state:
+    st.session_state.history = []
 
-# Show all previous messages
-for role, message in st.session_state.messages:
-    st.chat_message(role).write(message)
+# --- Display messages ---
+for role, msg in st.session_state.history:
+    st.chat_message(role).write(msg)
 
-# -----------------------------
-# CHAT INPUT
-# -----------------------------
-user_input = st.chat_input("Type your message here...")
+# --- User prompt ---
+user_input = st.chat_input("Ask something about penguins...")
 
 if user_input:
-    # Show user message and store it
+    st.session_state.history.append(("user", user_input))
     st.chat_message("user").write(user_input)
-    st.session_state.messages.append(("user", user_input))
 
-    # Build the message history for the model
+    # 🧠 Add your dataset as context
+    prompt = f"""
+You are a data assistant. Here is the Penguin dataset sample:
+{df.head(5).to_string(index=False)}
+
+Now answer this question using that dataset:
+{user_input}
+If it's not relevant to the data, just say: "Sorry, I can't answer that based on the dataset."
+"""
+
     try:
         completion = client.chat.completions.create(
             model="deepseek/deepseek-r1:free",
-            messages=[
-                {"role": "system", "content": "You are a helpful assistant."},
-                *[
-                    {"role": role, "content": content}
-                    for role, content in st.session_state.messages
-                ],
-            ],
+            messages=[{"role": "user", "content": prompt}],
             extra_headers={
                 "HTTP-Referer": "https://vkchatbot.streamlit.app/",
-                "X-Title": "VK Chatbot with DeepSeek"
+                "X-Title": "VK Chatbot - Penguin QA"
             }
         )
         reply = completion.choices[0].message.content
     except Exception as e:
         reply = f"❌ Error: {e}"
 
-    # Show assistant reply and store it
     st.chat_message("assistant").write(reply)
-    st.session_state.messages.append(("assistant", reply))
+    st.session_state.history.append(("assistant", reply))
