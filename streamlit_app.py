@@ -21,6 +21,13 @@ client = OpenAI(
     api_key=api_key,
 )
 
+st.title("🔐 Key Check")
+try:
+    resp = client.models.list()
+    st.success("✅ Connection to OpenRouter succeeded!")
+except Exception as e:
+    st.error(f"❌ Error during auth test: {e}")
+
 # -----------------------------
 # SESSION STATE FOR CHAT
 # -----------------------------
