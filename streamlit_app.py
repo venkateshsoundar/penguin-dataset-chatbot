@@ -120,7 +120,7 @@ with col_chat:
         # Build prompt with dataset context
         prompt = f"""
 You are a data assistant. Here is a sample of the Penguin dataset:
-{df.head.to_string(index=False)}
+{df.to_string(index=False)}
 
 Answer the user’s question based only on this data:
 {user_input}
