@@ -11,6 +11,7 @@ st.title("🤖 VK Chatbot - Powered by DeepSeek-R1")
 # LOAD API KEY SECURELY
 # -----------------------------
 api_key = st.secrets["DEEPSEEK_API_KEY"]
+st.text(f"✅ Loaded key: {api_key[:6]}**********")  # Only print prefix
 
 # -----------------------------
 # SETUP OPENROUTER CLIENT
