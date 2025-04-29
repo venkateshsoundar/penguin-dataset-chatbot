@@ -33,7 +33,7 @@ if user_input:
     # 🧠 Add your dataset as context
     prompt = f"""
 You are a data assistant. Here is the Penguin dataset sample:
-{df.head(5).to_string(index=False)}
+{df.to_string(index=False)}
 
 Now answer this question using that dataset:
 {user_input}
