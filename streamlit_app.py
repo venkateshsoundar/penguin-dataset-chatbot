@@ -1,145 +1,135 @@
+<!-- Full code with animations and responsive layout -->
 import streamlit as st
-import pandas as pd
-import numpy as np
-from sklearn.ensemble import RandomForestClassifier
 from openai import OpenAI
+import os
 
-# 1) Use a wide layout
-st.set_page_config(layout="wide")
+# --- CSS for animations and responsiveness ---
+st.markdown("""
+<style>
+.scroll-section {
+    max-height: 550px;
+    overflow-y: auto;
+}
+a:hover img {
+    transform: scale(1.03);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    transition: transform 0.3s ease-in-out;
+}
+@media screen and (max-width: 900px) {
+    .element-container {
+        flex-direction: column !important;
+    }
+}
+</style>
+""", unsafe_allow_html=True)
 
-# 2) Split into main & chat columns
-col_main, col_chat = st.columns([3, 1])
+# --- Dark Mode Toggle ---
+if "dark_mode" not in st.session_state:
+    st.session_state.dark_mode = False
+st.sidebar.checkbox("🌙 Dark Mode", value=st.session_state.dark_mode, key="dark_mode")
+if st.session_state.dark_mode:
+    st.markdown("""
+    <style>
+        .stApp { background-color: #121212; color: white; }
+        .block-container { color: white; }
+    </style>
+    """, unsafe_allow_html=True)
 
-# --- MAIN COLUMN ---
-with col_main:
-    st.title('🐧 Penguin Dataset Explorer')
-    st.write('This app builds a RandomForest model on the Palmer Penguins dataset and lets you explore data, visualize it, and see predictions.')
+# --- Chatbot Typewriter Effect ---
+def typewriter_effect(text, delay=30):
+    from time import sleep
+    placeholder = st.empty()
+    full_text = ""
+    for char in text:
+        full_text += char
+        placeholder.markdown(f"`{full_text}`")
+        sleep(delay / 1000.0)
+    placeholder.markdown(full_text)
 
-    # Load data
-    df = pd.read_csv(
-        "https://raw.githubusercontent.com/dataprofessor/data/refs/heads/master/penguins_cleaned.csv"
-    )
+# --- Portfolio Content ---
+profile = {
+    "name": "Venkateshwaran Balu Soundararajan",
+    "bio": "A data-driven professional with 8+ years in analytics, QA, and data science.",
+    "skills": ["Python", "SQL", "Power BI", "AWS", "Streamlit", "Machine Learning"],
+    "achievements": [
+        "Led QA at Deloitte for agile insurance projects",
+        "Built full ML pipeline with AWS and Streamlit dashboard",
+        "Published interactive data story on wildfire trends"
+    ],
+    "linkedin": "https://linkedin.com/in/venkateshbalus",
+    "github": "https://github.com/venkateshsoundar",
+    "resume": "https://github.com/venkateshsoundar/venkatesh-portfolio-chatbot/blob/main/assets/Venkateshwaran_Resume.pdf"
+}
 
-    # Raw data & visuals
-    with st.expander('🔍 Data Preview & Visuals', expanded=True):
-        st.write("**Raw Data**")
-        st.dataframe(df, use_container_width=True)
-        st.write("**Scatter:** bill_length_mm vs body_mass_g")
-        st.scatter_chart(df, x="bill_length_mm", y="body_mass_g", color="species")
+projects = [
+    {"title": "Canadian Quality of Life", "url": "https://github.com/...", "image": "https://github.com/.../QualityofLife.jpeg"},
+    {"title": "Wildfire Analysis", "url": "https://github.com/...", "image": "https://github.com/.../Alberta_forestfire.jpeg"},
+    {"title": "Crime Drivers", "url": "https://github.com/...", "image": "https://github.com/.../Toronto_Crimes.jpeg"},
+]
 
-    # Sidebar-style inputs (but placed here so they’re part of main layout)
-    with st.expander('⚙️ Input Features'):
-        island = st.selectbox("Island", df["island"].unique())    
-        bill_length_mm = st.slider(
-            'Bill length (mm)',
-            float(df['bill_length_mm'].min()),
-            float(df['bill_length_mm'].max()),
-            float(df['bill_length_mm'].mean())
-        )
-        bill_depth_mm = st.slider(
-            'Bill depth (mm)',
-            float(df['bill_depth_mm'].min()),
-            float(df['bill_depth_mm'].max()),
-            float(df['bill_depth_mm'].mean())
-        )
-        flipper_length_mm = st.slider(
-            'Flipper length (mm)',
-            float(df['flipper_length_mm'].min()),
-            float(df['flipper_length_mm'].max()),
-            float(df['flipper_length_mm'].mean())
-        )
-        body_mass_g = st.slider(
-            'Body mass (g)',
-            float(df['body_mass_g'].min()),
-            float(df['body_mass_g'].max()),
-            float(df['body_mass_g'].mean())
-        )
-        sex = st.selectbox("Sex", df["sex"].unique())
+# --- Layout ---
+col1, col2, col3 = st.columns([1, 1.2, 1.5])
 
-        # Build the input DataFrame
-        user_data = {
-            'island': island,
-            'bill_length_mm': bill_length_mm,
-            'bill_depth_mm': bill_depth_mm,
-            'flipper_length_mm': flipper_length_mm,
-            'body_mass_g': body_mass_g,
-            'sex': sex
-        }
-        input_df = pd.DataFrame(user_data, index=[0])
-        combined = pd.concat([input_df, df.drop('species', axis=1)], ignore_index=True)
+# --- Profile ---
+with col1:
+    st.subheader("👤 Profile")
+    st.markdown(f"**Name:** {profile['name']}")
+    st.markdown(profile['bio'])
+    st.markdown("**Skills:**")
+    st.markdown(", ".join(profile['skills']))
+    st.markdown("**Achievements:**")
+    for ach in profile["achievements"]:
+        st.markdown(f"- {ach}")
+    st.markdown(f"📄 [Resume]({profile['resume']})")
+    st.markdown(f"🔗 [LinkedIn]({profile['linkedin']}) | [GitHub]({profile['github']})")
 
-    # Encoding & modelling
-    with st.expander('🛠️ Data Prep & Prediction', expanded=True):
-        # One-hot encode
-        encode_cols = ['island', 'sex']
-        encoded = pd.get_dummies(combined, columns=encode_cols, prefix=encode_cols)
-        X = encoded.iloc[1:, :]   # all except first
-        input_row = encoded.iloc[[0]]
-
-        # Encode target
-        mapper = {'Adelie':0,'Chinstrap':1,'Gentoo':2}
-        y = df['species'].map(mapper)
-
-        # Train & predict
-        clf = RandomForestClassifier()
-        clf.fit(X, y)
-        proba = clf.predict_proba(input_row)[0]
-        proba_df = pd.DataFrame([proba], columns=['Adelie','Chinstrap','Gentoo'])
-
-        st.write("**Prediction probabilities**")
-        st.dataframe(proba_df, use_container_width=True)
-
-        species = np.array(['Adelie','Chinstrap','Gentoo'])
-        st.success(f"Predicted species: {species[np.argmax(proba)]}", icon="👍")
-
-
-# --- CHAT COLUMN ---
-with col_chat:
-    st.header("💬 Penguin ChatBot")
-    # Initialize OpenRouter client
-    api_key = st.secrets["DEEPSEEK_API_KEY"]
-    client = OpenAI(
-        base_url="https://openrouter.ai/api/v1",
-        api_key=api_key,
-    )
-
-    # Persist history
+# --- Chatbot ---
+with col2:
+    st.subheader("💬 Ask Me Anything")
     if "history" not in st.session_state:
         st.session_state.history = []
-
-    # Display past chat
     for role, msg in st.session_state.history:
         st.chat_message(role).write(msg)
 
-    # New user input
-    user_input = st.chat_input("Ask something about penguins…")
+    user_input = st.chat_input("Ask about skills, tools, or projects...")
     if user_input:
         st.session_state.history.append(("user", user_input))
         st.chat_message("user").write(user_input)
 
-        # Build prompt with dataset context
-        prompt = f"""
-You are a data assistant. Here is a sample of the Penguin dataset:
-{df.to_string(index=False)}
-
-Answer the user’s question based only on this data:
-{user_input}
-
-If irrelevant, say: "Sorry, I can't answer that based on the dataset."
+        context = f"""
+Name: {profile['name']}
+Bio: {profile['bio']}
+Skills: {', '.join(profile['skills'])}
+Projects:
 """
+        for proj in projects:
+            context += f"- {proj['title']}: {proj['url']}\n"
+        context += f"Achievements: {', '.join(profile['achievements'])}\n"
+
+        prompt = f"{context}\nQ: {user_input}\nA:"
 
         try:
-            completion = client.chat.completions.create(
+            client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=st.secrets["DEEPSEEK_API_KEY"])
+            response = client.chat.completions.create(
                 model="deepseek/deepseek-r1:free",
-                messages=[{"role": "user", "content": prompt}],
-                extra_headers={
-                    "HTTP-Referer": "https://vkchatbot.streamlit.app/",
-                    "X-Title": "VK Chatbot - Penguin QA"
-                }
+                messages=[{"role": "user", "content": prompt}]
             )
-            reply = completion.choices[0].message.content
+            reply = response.choices[0].message.content
         except Exception as e:
             reply = f"❌ Error: {e}"
 
         st.session_state.history.append(("assistant", reply))
         st.chat_message("assistant").write(reply)
+
+# --- Projects ---
+with col3:
+    st.subheader("📊 Projects")
+    for i, proj in enumerate(projects):
+        st.markdown(f"""
+            <div style='text-align:center; margin-bottom: 10px;'>
+                <a href='{proj['url']}' target='_blank'>
+                    <img src='{proj['image']}' style='width:100%; height:150px; border-radius:10px;'>
+                    <div style='padding-top:5px; font-weight:bold;'>{proj['title']}</div>
+                </a>
+            </div>
+        """, unsafe_allow_html=True)
