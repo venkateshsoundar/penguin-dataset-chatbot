@@ -1,25 +1,87 @@
-# 📦 Streamlit App Starter Kit 
+# Penguin Dataset Chatbot
+
+An interactive Streamlit application that allows users to explore the Palmer Penguins dataset via conversational queries. Powered by OpenRouter AI (DeepSeek) for context-aware answers.
+
+---
+
+## 🔧 Features
+
+- **Chat Interface**: Built using Streamlit's `st.chat_input` and `st.chat_message`.
+- **Data Context**: Loads the cleaned Palmer Penguins dataset for dynamic prompt inclusion.
+- **AI Backend**: Utilizes OpenRouter AI (DeepSeek) via the `openai.OpenAI` client.
+- **Session Memory**: Maintains full conversation history across queries.
+
+---
+
+## 📂 Repository Structure
+
 ```
-⬆️ (Replace above with your app's name)
+.
+├── .devcontainer/             # VS Code Codespaces configuration
+├── .streamlit/                # Streamlit settings & secrets
+│   └── secrets.toml           # Store DEEPSEEK_API_KEY
+├── streamlit_app.py           # Main application script
+├── requirements.txt           # Python dependencies
+└── README.md                  # Project documentation
 ```
 
-Description of the app ...
+---
 
-## Demo App
+## 🚀 Setup & Installation
 
-[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://app-starter-kit.streamlit.app/)
+1. **Clone the repository**  
+   ```bash
+   git clone https://github.com/venkateshsoundar/vk_chatbot.git
+   cd vk_chatbot
+   ```
 
-## GitHub Codespaces
+2. **Create & activate** a virtual environment  
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate    # macOS/Linux
+   venv\Scripts\activate     # Windows
+   ```
 
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/streamlit/app-starter-kit?quickstart=1)
+3. **Install dependencies**  
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-## Section Heading
+4. **Configure API Key**  
+   Add your DeepSeek API key to `.streamlit/secrets.toml`:
+   ```toml
+   DEEPSEEK_API_KEY = "your_openrouter_or_deepseek_api_key_here"
+   ```
 
-This is filler text, please replace this with text for this section.
+---
 
-## Further Reading
+## ▶️ Running the App
 
-This is filler text, please replace this with a explanatory text about further relevant resources for this repo
-- Resource 1
-- Resource 2
-- Resource 3
+```bash
+streamlit run streamlit_app.py
+```
+Open the displayed URL (e.g., `http://localhost:8501`) in your browser and start chatting!
+
+---
+
+## ✨ Usage Example
+
+- Ask about species characteristics: 
+  > “What is the average bill length of Adelie penguins?”
+- Compare groups:
+  > “How do Gentoo and Chinstrap penguins differ in flipper length?”
+
+---
+
+## 🤝 Contributing
+
+1. Fork this repository  
+2. Create a feature branch: `git checkout -b feature/YourFeature`  
+3. Commit changes: `git commit -m "Add feature"`  
+4. Push & open a Pull Request
+
+---
+
+## 📜 License
+
+MIT License © 2025 Venkateshwaran B. S.
